@@ -10,7 +10,7 @@ import java.util.Map;
 @Setter
 @Getter
 @ToString
-public class CommonResponse {
+public class AllocateMoneyResponse {
     private String returnCode;
     private String message;
     private Map<String, String> data;
