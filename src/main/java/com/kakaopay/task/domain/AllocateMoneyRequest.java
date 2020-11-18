@@ -6,6 +6,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class AllocateMoneyRequest {
-    private long targetAmount;
-    private int tergetNumber;
+    private int money;
+    private int count;
 }
