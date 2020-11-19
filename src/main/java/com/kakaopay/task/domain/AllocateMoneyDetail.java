@@ -17,13 +17,13 @@ public class AllocateMoneyDetail {
     private Long _id;
     private String token;
     private String roomId;
-    private String receiverId;
+    private int receiverId;
     private int splitMoney;
     private LocalDateTime regDate;
     private int dataVersion;
 
     @Builder
-    public AllocateMoneyDetail(String token, String roomId, String receiverId, int splitMoney, LocalDateTime regDate, int dataVersion) {
+    public AllocateMoneyDetail(String token, String roomId, int receiverId, int splitMoney, LocalDateTime regDate, int dataVersion) {
         this.token = token;
         this.roomId = roomId;
         this.receiverId = receiverId;

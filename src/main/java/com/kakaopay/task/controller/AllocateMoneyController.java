@@ -1,11 +1,11 @@
 package com.kakaopay.task.controller;
 
 import com.kakaopay.task.code.ErrorCode;
-import com.kakaopay.task.constant.AllocateMoneyConstant;
 import com.kakaopay.task.domain.AllocateMoneyRequest;
 import com.kakaopay.task.domain.AllocateMoneyResponse;
 import com.kakaopay.task.exception.AllocateMoneyException;
 import com.kakaopay.task.service.AllocateMoneyService;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "/v1/payapi/")
+@RequestMapping("/v1/api")
 public class AllocateMoneyController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -36,33 +36,16 @@ public class AllocateMoneyController {
      * @param amReq
      * @return
      */
-    @RequestMapping(value = "/allocateMoney", method = RequestMethod.POST)
+    @PostMapping("/allocateMoney")
     private AllocateMoneyResponse allocateMoney(@RequestHeader(ROOM_ID) String roomId,
-                                                                @RequestHeader(USER_ID)int userId,
-                                                                @RequestBody AllocateMoneyRequest amReq) throws Exception {
-        String functionName = "amountDistribution";
+                                                @RequestHeader(USER_ID)int userId,
+                                                @RequestBody AllocateMoneyRequest amReq) throws Exception {
 
+        String functionName = "amountDistribution";
         logger.info("[{}] 함수시작", functionName);
 
-//        AllocateMoneyResponse amRes = new AllocateMoneyResponse();
-
-        // userId, roomId valid
-        if ("".equals(roomId) || userId < 0) {
-//            amRes.builder()
-//                    .resultCode(AllocateMoneyConstant.RESULT_FAIL_HEADER)
-//                    .resultMessage(AllocateMoneyConstant.RESULT_FAIL_HEADER_MASSGE)
-//                    .build();
-        }
-
-        // AllocateMoneyRequest valid
-        if (amReq.getMoney() <= 0 || amReq.getCount() <= 0) {
-//            amRes.builder()
-//                    .resultCode(AllocateMoneyConstant.RESULT_FAIL_PARAM)
-//                    .resultMessage(AllocateMoneyConstant.RESULT_FAIL_PARAM_MASSGE)
-//                    .build();
-        }
-        
-        // url 검증, 숫자 문자 검증 추가 필요
+        // 요청 유효성 검증
+        if (StringUtils.isEmpty(roomId) || userId <= 0 || amReq.getMoney() <= 0 || amReq.getCount() <= 0) throw new AllocateMoneyException(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_REQUEST);
 
         // 뿌리기 프로세스 처리 후 응답 결과 생성
         AllocateMoneyResponse amRes = AllocateMoneyResponse.builder()
@@ -71,18 +54,45 @@ public class AllocateMoneyController {
                 .build();
 
         logger.info("[{}] 함수종료", functionName);
-        logger.info("amRes={}", amRes);
 
         return amRes;
     }
 
-    @RequestMapping(value = "/receiveMoney", method = RequestMethod.PUT)
-    private ResponseEntity<AllocateMoneyResponse> receiveMoney() {
-        return null;
+    @PutMapping("/allocateMoney/{token}")
+    private ResponseEntity<Object> receiveMoney(@RequestHeader(ROOM_ID) String roomId,
+                                        @RequestHeader(USER_ID) int userId,
+                                        @PathVariable(name = "token") String token) throws Exception {
+
+        String functionName = "receiveMoney";
+        logger.info("[{}] 함수시작", functionName);
+
+        // 요청 유효성 검증
+        if (StringUtils.isEmpty(roomId) || userId <= 0 || StringUtils.isEmpty(token)) throw new AllocateMoneyException(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_REQUEST);
+        
+        // 받기 프로세스 처리 후 응답 결과 생성
+        Map<String, Object> result = new HashMap<>();
+        result.put("resultCode", ErrorCode.OK);
+        result.put("money", allocateMoneyService.receiveMoney(roomId, userId, token));
+
+        logger.info("[{}] 함수종료", functionName);
+
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/retrieveMoney", method = RequestMethod.GET)
-    private ResponseEntity<AllocateMoneyResponse> retrieveMoney() {
+    @GetMapping("/allocateMoney/{token}")
+    private AllocateMoneyResponse retrieveMoney(@RequestHeader(ROOM_ID) String roomId,
+                                                @RequestHeader(USER_ID) int userId,
+                                                @PathVariable(name = "token") String token) throws Exception {
+
+        String functionName = "retrieveMoney";
+        logger.info("[{}] 함수시작", functionName);
+
+        // 요청 유효성 검증
+        if (StringUtils.isEmpty(roomId) || userId <= 0 || StringUtils.isEmpty(token)) throw new AllocateMoneyException(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_REQUEST);
+
+
+        logger.info("[{}] 함수종료", functionName);
+
         return null;
     }
 
