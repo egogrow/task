@@ -1,26 +1,29 @@
 package com.kakaopay.task.exception;
 
+import com.kakaopay.task.code.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 public class AllocateMoneyException extends RuntimeException {
     private static final long serialVersionUID = 1L;
-    private String message;
-    private HttpStatus httpStatus;
 
-    public AllocateMoneyException(String message) {
-        this(message, HttpStatus.EXPECTATION_FAILED);
+    private HttpStatus status;
+    private ErrorCode resultCode;
+
+    public AllocateMoneyException(HttpStatus status, ErrorCode resultCode) {
+        this.status = status;
+        this.resultCode = resultCode;
     }
 
-    public AllocateMoneyException(String message, HttpStatus httpStatus) {
-        this.message = message;
-        this.httpStatus = httpStatus;
+    public HttpStatus getStatus() {
+        return status;
     }
 
-    public String getMessage() {
-        return this.message;
+    public void setStatus(HttpStatus status) {
+        this.status = status;
     }
 
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
+    public ErrorCode getResultCode() {
+        return resultCode;
     }
+
 }

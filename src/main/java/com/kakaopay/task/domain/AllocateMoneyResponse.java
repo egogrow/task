@@ -1,21 +1,19 @@
 package com.kakaopay.task.domain;
 
+import com.kakaopay.task.code.ErrorCode;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
-@Setter
 @Getter
-@ToString
+@Setter
 public class AllocateMoneyResponse {
-    private String resultCode;
-    private String resultMessage;
-    private Object token;
+    private ErrorCode resultCode;
+    private String token;
 
     @Builder
-    public void AllocateMoneyResponse(String resultCode, String resultMessage) {
+    public AllocateMoneyResponse(ErrorCode resultCode, String token) {
         this.resultCode = resultCode;
-        this.resultMessage = resultMessage;
+        this.token = token;
     }
 }
