@@ -9,6 +9,7 @@ import com.kakaopay.task.repository.AllocateMoneyDetailRepository;
 import com.kakaopay.task.repository.AllocateMoneyRepository;
 import com.kakaopay.task.util.LogUtil;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class AllocateMoneyService {
@@ -29,10 +29,10 @@ public class AllocateMoneyService {
 
     @Autowired
     private AllocateMoneyDetailRepository amdRepo;
-
+    
     /**
-     * 뿌리기 처리 프로세스
-     * 
+     * 뿌리기 프로세스
+     *
      * @param roomId
      * @param userId
      * @param amReq
@@ -54,20 +54,15 @@ public class AllocateMoneyService {
         // 대화방에 고유한 token이 생성될때까지 수행
         while(true) {
             // 랜덤한 영문 대소문자 3자리 문자열 생성
-            token = RandomStringUtils.randomAlphanumeric(3);
+            token = RandomStringUtils.randomAlphabetic(3);
 
             // 대화방 고유 token 검증
             am = amRepo.findByRoomIdAndToken(roomId, token);
-            if (am == null) {
-                break;
-            } else {
-                // 동일 대화방, 토큰으로 뿌리기 존재 예외처리
-                throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_ALREADY);
-            }
+            if (am == null) break;
         }
 
         // 토큰 생성 오류 예외처리
-        if (!token.isEmpty()) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_TOKEN);
+        if (StringUtils.isEmpty(token)) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_TOKEN);
         
         // 뿌리기 요청 정보 생성 저장
         am = new AllocateMoney().builder()
@@ -92,7 +87,23 @@ public class AllocateMoneyService {
             }
             money -= splitMoney[i];
         }
-        logger.info("splitMoney={}", LogUtil.printData(splitMoney));
+        logger.info("splitMoney 셔플 전 ={}", LogUtil.printData(splitMoney));
+
+        // 분배 금액 셔플
+        int s1, s2;
+        int temp;
+        for (int i = 0; i < splitMoney.length; i++) {
+            // for문이 돌아갈때마다 바뀌는 난수 s1, s2생성
+            s1 = (int) (Math.random() * count);
+            s2 = (int) (Math.random() * count);
+            // 변수에 배열 s1번의 값을 담기 -> swap용
+            temp = splitMoney[s1];
+            // s1번째 값을 s2번째 값으로 바꿔주기
+            splitMoney[s1] = splitMoney[s2];
+            // s2번째 값에 swap용변수(s1)번 값 담아주기
+            splitMoney[s2] = temp;
+        }
+        logger.info("splitMoney 셔플 후 ={}", LogUtil.printData(splitMoney));
 
         // 뿌리기 금액 정보 생성
         AllocateMoneyDetail amd = null;
@@ -114,19 +125,21 @@ public class AllocateMoneyService {
     }
 
     /**
-     * 받기 처리 프로세스
+     * 받기 프로세스
      *
      * @param roomId
      * @param userId
      * @param token
      * @return
+     * @throws Exception
      */
-    public int receiveMoney(String roomId, int userId, String token) {
+    public Map<String, Object> receiveMoney(String roomId, int userId, String token) throws Exception {
 
         AllocateMoney am = null;
         AllocateMoneyDetail amd = null;
         List<AllocateMoneyDetail> amdList = null;
-        LocalDateTime ldt = LocalDateTime.now().minusMinutes(10); // 현시간으로부터 10분전
+        LocalDateTime ldt = LocalDateTime.now().minusMinutes(10); // 10분전
+        Map<String, Object> result = new LinkedHashMap<>();
 
         // roomId, token 값으로 뿌리기 정보 조회
         am = amRepo.findByRoomIdAndToken(roomId, token);
@@ -155,18 +168,95 @@ public class AllocateMoneyService {
         int receiveMoney = 0;
         amdList = amdRepo.findByRoomIdAndTokenAndReceiverId(roomId, token, -1);
         if (amdList != null && amdList.size() > 0) {
-            amd = amdList.get(0); // 첫번째 금액 정보부터 사용.
-            
+            // 최고 금액 계산
+            int maxMoney = 0;
+            for (AllocateMoneyDetail tempAmd : amdList) {
+                // 최고 금액으로 갱신
+                if (maxMoney < tempAmd.getSplitMoney()) {
+                    maxMoney = tempAmd.getSplitMoney();
+                }
+                logger.info("money={}, maxMoney={}", tempAmd.getSplitMoney(), maxMoney);
+            }
+
+            amd = amdList.get(0); // 금액 생성 순 조회 할당
+            receiveMoney = amd.getSplitMoney(); // 받을 금액
             amd.setReceiverId(userId); // 미할당 -1 값에서 요청자의 userId로 설정
             amdRepo.save(amd); // 기존 정보 갱신
 
-            receiveMoney = amd.getSplitMoney();
+            // 최종 응답 결과 생성
+            result.put("money", receiveMoney);
+            if (maxMoney == amd.getSplitMoney()) result.put("message", "축하합니다. 최고 금액을 받았습니다!");
+            result.put("resultCode", ErrorCode.OK);
+
         } else {
             // 더 이상 받을 뿌리기가 없습니다.
             throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_END);
         }
 
-        return receiveMoney;
+        return result;
+    }
+
+    /**
+     * 조회 프로세스
+     * 
+     * @param roomId
+     * @param userId
+     * @param token
+     * @return
+     * @throws Exception
+     */
+    public Map<String, Object> retrieveMoney(String roomId, int userId, String token) throws Exception {
+
+        AllocateMoney am = null;
+        AllocateMoneyDetail amd = null;
+        List<AllocateMoneyDetail> amdList = null;
+        LocalDateTime ld = LocalDateTime.now().minusDays(7); // 7일 전
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        // roomId, token 값으로 뿌리기 정보 조회
+        am = amRepo.findByRoomIdAndToken(roomId, token);
+
+        // 대화방이 다르거나 token이 유효하지 않은 경우
+        if (am == null) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_ROOM_TOKEN);
+
+        // 자신이 신청한 뿌리기만 조회 가능합니다.
+        if (am.getUserId() != userId) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_RETRIEVE);
+
+        // 조회한 뿌리기는 7일이 지나 만료되었습니다.
+        if (ld.isAfter(am.getRegDate())) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_7_DAY);
+
+        // 받은 금액 정보 조회 (-1 이 아닌 정보)
+        amdList = amdRepo.findByRoomIdAndTokenAndReceiverIdNot(roomId, token, -1);
+        logger.info("amdList={}", LogUtil.printData(amdList));
+
+        // 뿌린 시각, 뿌린 금액, 받기 완료된 금액, 받기 완료된 정보 ([받은 금액, 받은 사용자 아이디] 리스트)
+        List<Map<String, Object>> amdReceiveList = new ArrayList<>();
+        int sumSplitMoney = 0;
+        if (amdList != null) {
+            for (AllocateMoneyDetail tempAmd : amdList) {
+                // 받기 완료된 금액 합산
+                sumSplitMoney += tempAmd.getSplitMoney();
+                // 받은 금액, 받은 사용자 아이디 결과 생성
+                Map<String, Object> amdReceive = new LinkedHashMap<>();
+                amdReceive.put("받은 금액", tempAmd.getSplitMoney());
+                amdReceive.put("받은 사용자 아이디", tempAmd.getReceiverId());
+                amdReceiveList.add(amdReceive);
+            }
+        }
+        logger.info("amdReceiveList={}", LogUtil.printData(amdReceiveList));
+
+        // 최종 응답 결과 생성
+        result.put("뿌린 시각", am.getRegDate());
+        result.put("뿌린 금액", am.getMoney());
+        result.put("받기 완료된 금액", sumSplitMoney);
+        if (!amdReceiveList.isEmpty()) {
+            result.put("받기 완료된 정보", amdReceiveList);
+        } else {
+            result.put("받기 완료된 정보", "");
+        }
+        result.put("resultCode", ErrorCode.OK);
+
+        return result;
     }
 
 }

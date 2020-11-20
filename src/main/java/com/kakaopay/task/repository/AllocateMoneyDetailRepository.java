@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface AllocateMoneyDetailRepository extends JpaRepository<AllocateMoneyDetail, Long> {
     public List<AllocateMoneyDetail> findByRoomIdAndTokenAndReceiverId(String roomId, String token, int userId);
+    public List<AllocateMoneyDetail> findByRoomIdAndTokenAndReceiverIdNot(String roomId, String token, int userId);
 }

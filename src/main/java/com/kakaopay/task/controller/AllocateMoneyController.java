@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -31,10 +30,11 @@ public class AllocateMoneyController {
     /**
      * 뿌리기 API
      *
-     * @param userId
      * @param roomId
+     * @param userId
      * @param amReq
      * @return
+     * @throws Exception
      */
     @PostMapping("/allocateMoney")
     private AllocateMoneyResponse allocateMoney(@RequestHeader(ROOM_ID) String roomId,
@@ -49,8 +49,8 @@ public class AllocateMoneyController {
 
         // 뿌리기 프로세스 처리 후 응답 결과 생성
         AllocateMoneyResponse amRes = AllocateMoneyResponse.builder()
-                .resultCode(ErrorCode.OK)
                 .token(allocateMoneyService.allocateMoney(roomId, userId, amReq))
+                .resultCode(ErrorCode.OK)
                 .build();
 
         logger.info("[{}] 함수종료", functionName);
@@ -58,6 +58,15 @@ public class AllocateMoneyController {
         return amRes;
     }
 
+    /**
+     * 받기 API
+     *
+     * @param roomId
+     * @param userId
+     * @param token
+     * @return
+     * @throws Exception
+     */
     @PutMapping("/allocateMoney/{token}")
     private ResponseEntity<Object> receiveMoney(@RequestHeader(ROOM_ID) String roomId,
                                         @RequestHeader(USER_ID) int userId,
@@ -67,20 +76,27 @@ public class AllocateMoneyController {
         logger.info("[{}] 함수시작", functionName);
 
         // 요청 유효성 검증
-        if (StringUtils.isEmpty(roomId) || userId <= 0 || StringUtils.isEmpty(token)) throw new AllocateMoneyException(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_REQUEST);
-        
+        if (StringUtils.isEmpty(roomId) || userId <= 0 || StringUtils.isEmpty(token) || token.length() < 3) throw new AllocateMoneyException(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_REQUEST);
+
         // 받기 프로세스 처리 후 응답 결과 생성
-        Map<String, Object> result = new HashMap<>();
-        result.put("resultCode", ErrorCode.OK);
-        result.put("money", allocateMoneyService.receiveMoney(roomId, userId, token));
+        Map<String, Object> result = allocateMoneyService.receiveMoney(roomId, userId, token);
 
         logger.info("[{}] 함수종료", functionName);
 
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
+    /**
+     * 조회 API
+     *
+     * @param roomId
+     * @param userId
+     * @param token
+     * @return
+     * @throws Exception
+     */
     @GetMapping("/allocateMoney/{token}")
-    private AllocateMoneyResponse retrieveMoney(@RequestHeader(ROOM_ID) String roomId,
+    private ResponseEntity<Object> retrieveMoney(@RequestHeader(ROOM_ID) String roomId,
                                                 @RequestHeader(USER_ID) int userId,
                                                 @PathVariable(name = "token") String token) throws Exception {
 
@@ -88,12 +104,14 @@ public class AllocateMoneyController {
         logger.info("[{}] 함수시작", functionName);
 
         // 요청 유효성 검증
-        if (StringUtils.isEmpty(roomId) || userId <= 0 || StringUtils.isEmpty(token)) throw new AllocateMoneyException(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_REQUEST);
+        if (StringUtils.isEmpty(roomId) || userId <= 0 || StringUtils.isEmpty(token) || token.length() < 3) throw new AllocateMoneyException(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_REQUEST);
 
+        // 조회 프로세스 처리 후 응답 결과 생성
+        Map<String, Object> result = allocateMoneyService.retrieveMoney(roomId, userId, token);
 
         logger.info("[{}] 함수종료", functionName);
 
-        return null;
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
 }

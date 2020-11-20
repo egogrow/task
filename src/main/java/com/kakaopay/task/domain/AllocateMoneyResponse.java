@@ -8,12 +8,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AllocateMoneyResponse {
-    private ErrorCode resultCode;
     private String token;
+    private ErrorCode resultCode;
 
     @Builder
-    public AllocateMoneyResponse(ErrorCode resultCode, String token) {
-        this.resultCode = resultCode;
+    public AllocateMoneyResponse(String token, ErrorCode resultCode) {
         this.token = token;
+        this.resultCode = resultCode;
     }
 }

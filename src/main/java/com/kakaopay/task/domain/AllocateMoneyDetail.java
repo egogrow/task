@@ -20,15 +20,13 @@ public class AllocateMoneyDetail {
     private int receiverId;
     private int splitMoney;
     private LocalDateTime regDate;
-    private int dataVersion;
 
     @Builder
-    public AllocateMoneyDetail(String token, String roomId, int receiverId, int splitMoney, LocalDateTime regDate, int dataVersion) {
+    public AllocateMoneyDetail(String token, String roomId, int receiverId, int splitMoney, LocalDateTime regDate) {
         this.token = token;
         this.roomId = roomId;
         this.receiverId = receiverId;
         this.splitMoney = splitMoney;
         this.regDate = regDate;
-        this.dataVersion = dataVersion;
     }
 }
