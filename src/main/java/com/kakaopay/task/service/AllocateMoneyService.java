@@ -252,7 +252,7 @@ public class AllocateMoneyService {
         if (!amdReceiveList.isEmpty()) {
             result.put("받기 완료된 정보", amdReceiveList);
         } else {
-            result.put("받기 완료된 정보", "");
+            result.put("받기 완료된 정보", "현재 받은 사람이 없습니다.");
         }
         result.put("resultCode", ErrorCode.OK);
 
