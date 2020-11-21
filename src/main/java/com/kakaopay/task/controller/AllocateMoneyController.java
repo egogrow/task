@@ -37,8 +37,8 @@ public class AllocateMoneyController {
      * @throws Exception
      */
     @PostMapping("/allocateMoney")
-    private AllocateMoneyResponse allocateMoney(@RequestHeader(ROOM_ID) String roomId,
-                                                @RequestHeader(USER_ID)int userId,
+    private ResponseEntity<AllocateMoneyResponse> allocateMoney(@RequestHeader(ROOM_ID) String roomId,
+                                                @RequestHeader(USER_ID) int userId,
                                                 @RequestBody AllocateMoneyRequest amReq) throws Exception {
 
         String functionName = "amountDistribution";
@@ -55,7 +55,7 @@ public class AllocateMoneyController {
 
         logger.info("[{}] 함수종료", functionName);
 
-        return amRes;
+        return new ResponseEntity<>(amRes, HttpStatus.OK);
     }
 
     /**
