@@ -114,6 +114,7 @@ public class AllocateMoneyService {
                     .roomId(roomId)
                     .receiverId(-1)
                     .splitMoney(splitMoney[i])
+                    .maxMoneyYn("N")
                     .regDate(LocalDateTime.now())
                     .build();
             amdList.add(amd);
@@ -181,12 +182,22 @@ public class AllocateMoneyService {
             amd = amdList.get(0); // 금액 생성 순 조회 할당
             receiveMoney = amd.getSplitMoney(); // 받을 금액
             amd.setReceiverId(userId); // 미할당 -1 값에서 요청자의 userId로 설정
-            amdRepo.save(amd); // 기존 정보 갱신
+            logger.info("money@@@@@@@@@={}, maxMoney@@@@@@@@@={}", receiveMoney, maxMoney);
+
+            // 최고 금액 지급 여부 조회
+            boolean maxMoneyYn = amdRepo.existsByRoomIdAndTokenAndMaxMoneyYn(roomId, token, "Y");
 
             // 최종 응답 결과 생성
             result.put("money", receiveMoney);
-            if (maxMoney == amd.getSplitMoney()) result.put("message", "축하합니다. 최고 금액을 받았습니다!");
+            if (!maxMoneyYn) {
+                if (maxMoney == receiveMoney) {
+                    result.put("message", "축하합니다. 최고 금액을 받았습니다!");
+                    amd.setMaxMoneyYn("Y");
+                }
+            }
             result.put("resultCode", ErrorCode.OK);
+
+            amdRepo.save(amd); // 기존 정보 갱신
 
         } else {
             // 더 이상 받을 뿌리기가 없습니다.

@@ -4,7 +4,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import javax.persistence.*;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import java.time.LocalDateTime;
 
 @NoArgsConstructor
@@ -19,14 +23,16 @@ public class AllocateMoneyDetail {
     private String roomId;
     private int receiverId;
     private int splitMoney;
+    private String maxMoneyYn;
     private LocalDateTime regDate;
 
     @Builder
-    public AllocateMoneyDetail(String token, String roomId, int receiverId, int splitMoney, LocalDateTime regDate) {
+    public AllocateMoneyDetail(String token, String roomId, int receiverId, int splitMoney, String maxMoneyYn, LocalDateTime regDate) {
         this.token = token;
         this.roomId = roomId;
         this.receiverId = receiverId;
         this.splitMoney = splitMoney;
+        this.maxMoneyYn = maxMoneyYn;
         this.regDate = regDate;
     }
 }
