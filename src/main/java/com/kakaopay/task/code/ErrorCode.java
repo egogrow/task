@@ -6,8 +6,8 @@ import lombok.Getter;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @Getter
 public enum ErrorCode {
-    OK("0000", "정상 처리되었습니다."),
-    ERROR_REQUEST("1001", "잘못된 요청입니다."),
+    OK("0000", "정상 처리되었습니다."), // 처리 완료
+    ERROR_REQUEST("1001", "잘못된 요청입니다."), // 처리 완료
     ERROR_TIME_OUT("1002", "요청 시간이 초과되었습니다."),
     ERROR_TOKEN("1003", "토큰 생성이 실패했습니다. 잠시 후 다시 시도해 주세요."), // 처리 완료
     ERROR_MONEY("1004", "인원수보다 많은 금액을 입력하세요."), // 처리 완료
@@ -24,12 +24,12 @@ public enum ErrorCode {
     ERROR_DB("9001", "데이터베이스에 오류가 있습니다. 잠시 후 다시 시도해 주세요.")
     ;
 
-    private final String code;
-    private final String message;
+    private final String resultCode;
+    private final String resultMessage;
 
-    ErrorCode(final String code, final String message) {
-        this.code = code;
-        this.message = message;
+    ErrorCode(final String resultCode, final String resultMessage) {
+        this.resultCode = resultCode;
+        this.resultMessage = resultMessage;
     }
 
 }

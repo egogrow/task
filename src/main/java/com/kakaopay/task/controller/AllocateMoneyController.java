@@ -50,7 +50,7 @@ public class AllocateMoneyController {
         // 뿌리기 프로세스 처리 후 응답 결과 생성
         AllocateMoneyResponse amRes = AllocateMoneyResponse.builder()
                 .token(allocateMoneyService.allocateMoney(roomId, userId, amReq))
-                .resultCode(ErrorCode.OK)
+                .data(ErrorCode.OK)
                 .build();
 
         logger.info("[{}] 함수종료", functionName);

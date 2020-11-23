@@ -13,7 +13,7 @@ public class AllocateMoneyAdvice {
     @ExceptionHandler(AllocateMoneyException.class)
     public ResponseEntity<Map<String, Object>> handler(AllocateMoneyException e) {
         Map<String, Object> resBody = new HashMap<>();
-        resBody.put("resultCode", e.getResultCode());
+        resBody.put("data", e.getData());
 
         return new ResponseEntity<>(resBody, e.getStatus());
     }

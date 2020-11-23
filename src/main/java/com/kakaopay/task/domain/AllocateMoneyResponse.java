@@ -9,11 +9,11 @@ import lombok.Setter;
 @Setter
 public class AllocateMoneyResponse {
     private String token;
-    private ErrorCode resultCode;
+    private ErrorCode data;
 
     @Builder
-    public AllocateMoneyResponse(String token, ErrorCode resultCode) {
+    public AllocateMoneyResponse(String token, ErrorCode data) {
         this.token = token;
-        this.resultCode = resultCode;
+        this.data = data;
     }
 }

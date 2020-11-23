@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class AllocateMoneyDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long _id;
+    private Long id;
     private String token;
     private String roomId;
     private int receiverId;

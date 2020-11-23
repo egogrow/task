@@ -7,11 +7,11 @@ public class AllocateMoneyException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     private HttpStatus status;
-    private ErrorCode resultCode;
+    private ErrorCode data;
 
-    public AllocateMoneyException(HttpStatus status, ErrorCode resultCode) {
+    public AllocateMoneyException(HttpStatus status, ErrorCode data) {
         this.status = status;
-        this.resultCode = resultCode;
+        this.data = data;
     }
 
     public HttpStatus getStatus() {
@@ -22,8 +22,8 @@ public class AllocateMoneyException extends RuntimeException {
         this.status = status;
     }
 
-    public ErrorCode getResultCode() {
-        return resultCode;
+    public ErrorCode getData() {
+        return data;
     }
 
 }

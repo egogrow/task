@@ -195,7 +195,7 @@ public class AllocateMoneyService {
                     amd.setMaxMoneyYn("Y");
                 }
             }
-            result.put("resultCode", ErrorCode.OK);
+            result.put("data", ErrorCode.OK);
 
             amdRepo.save(amd); // 기존 정보 갱신
 
@@ -249,23 +249,23 @@ public class AllocateMoneyService {
                 sumSplitMoney += tempAmd.getSplitMoney();
                 // 받은 금액, 받은 사용자 아이디 결과 생성
                 Map<String, Object> amdReceive = new LinkedHashMap<>();
-                amdReceive.put("받은 금액", tempAmd.getSplitMoney());
-                amdReceive.put("받은 사용자 아이디", tempAmd.getReceiverId());
+                amdReceive.put("splitMoney", tempAmd.getSplitMoney());   // 받은 금액
+                amdReceive.put("receiverId", tempAmd.getReceiverId());   // 받은 사용자 아이디
                 amdReceiveList.add(amdReceive);
             }
         }
         logger.info("amdReceiveList={}", LogUtil.printData(amdReceiveList));
 
         // 최종 응답 결과 생성
-        result.put("뿌린 시각", am.getRegDate());
-        result.put("뿌린 금액", am.getMoney());
-        result.put("받기 완료된 금액", sumSplitMoney);
+        result.put("allocateMoneyTime", am.getRegDate());                // 뿌린 시각
+        result.put("allocateMoney", am.getMoney());                      // 뿌린 금액
+        result.put("receiveMoney", sumSplitMoney);                       // 받기 완료된 금액
         if (!amdReceiveList.isEmpty()) {
-            result.put("받기 완료된 정보", amdReceiveList);
+            result.put("receiveMoneyInfo", amdReceiveList);              // 받기 완료된 정보
         } else {
-            result.put("받기 완료된 정보", "현재 받은 사람이 없습니다.");
+            result.put("receiveMoneyInfo", "현재 받은 사람이 없습니다.");
         }
-        result.put("resultCode", ErrorCode.OK);
+        result.put("data", ErrorCode.OK);
 
         return result;
     }

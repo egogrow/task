@@ -1,7 +1,7 @@
 package com.kakaopay.task.config;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -9,25 +9,23 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
+@RequiredArgsConstructor
 @Configuration
 @EnableRedisRepositories
 public class RedisRepositoryConfig {
-    @Value("${spring.redis.host}")
-    private String redisHost;
+    private final RedisProperties redisProperties;
 
-    @Value("${spring.redis.port}")
-    private int redisPort;
-
+    // lettuce
     @Bean
-    @ConditionalOnMissingBean(RedisConnectionFactory.class)
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(redisHost, redisPort);
+        return new LettuceConnectionFactory(redisProperties.getHost(), redisProperties.getPort());
     }
 
     @Bean
     public RedisTemplate<?, ?> redisTemplate() {
         RedisTemplate<byte[], byte[]> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
+
         return redisTemplate;
     }
 }

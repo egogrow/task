@@ -2,18 +2,20 @@ package com.kakaopay.task.domain;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.redis.core.RedisHash;
 
 import javax.persistence.Id;
 import java.time.LocalDateTime;
 
+@NoArgsConstructor
 @Getter
 @Setter
-@RedisHash("AllocateMoney")
+@RedisHash("AllocateMoneyRedis")
 public class AllocateMoneyRedis {
     @Id
-    private Long _id;
+    private Long id;
     private String token;
     private String roomId;
     private int userId;
@@ -22,7 +24,8 @@ public class AllocateMoneyRedis {
     private LocalDateTime regDate;
 
     @Builder
-    public AllocateMoneyRedis(String token, String roomId, int userId, int money, int count, LocalDateTime regDate) {
+    public AllocateMoneyRedis(Long id, String token, String roomId, int userId, int money, int count, LocalDateTime regDate) {
+        this.id = id;
         this.token = token;
         this.roomId = roomId;
         this.userId = userId;
@@ -30,4 +33,5 @@ public class AllocateMoneyRedis {
         this.count = count;
         this.regDate = regDate;
     }
+
 }
