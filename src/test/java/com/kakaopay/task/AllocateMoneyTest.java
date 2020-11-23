@@ -77,7 +77,7 @@ class AllocateMoneyTest {
         mockMvc.perform(builder)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // USER_ID 유효성 예외처리 검사
         MockHttpServletRequestBuilder builder2 = post(URL)
@@ -90,7 +90,7 @@ class AllocateMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // 금액이 1원 이하일 경우 검사
         amReq.setMoney(0);
@@ -105,7 +105,7 @@ class AllocateMoneyTest {
         mockMvc.perform(builder3)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // 인원이 1명 이하일 경우 검사
         amReq.setMoney(1000);
@@ -120,7 +120,7 @@ class AllocateMoneyTest {
         mockMvc.perform(builder4)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // 금액이 인원수보다 작은 경우 검사
         amReq.setMoney(2);
@@ -135,7 +135,7 @@ class AllocateMoneyTest {
         mockMvc.perform(builder5)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
     }
 
     @Test
@@ -157,7 +157,7 @@ class AllocateMoneyTest {
         mockMvc.perform(builder)
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.OK.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.OK.getResultCode())));
     }
 
 }

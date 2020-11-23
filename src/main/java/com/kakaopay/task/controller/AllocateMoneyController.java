@@ -41,7 +41,7 @@ public class AllocateMoneyController {
                                                 @RequestHeader(USER_ID) int userId,
                                                 @RequestBody AllocateMoneyRequest amReq) throws Exception {
 
-        String functionName = "amountDistribution";
+        String functionName = "allocateMoney";
         logger.info("[{}] 함수시작", functionName);
 
         // 요청 유효성 검증

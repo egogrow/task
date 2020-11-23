@@ -1,11 +1,11 @@
 package com.kakaopay.task.service;
 
 import com.kakaopay.task.code.ErrorCode;
-import com.kakaopay.task.domain.AllocateMoney;
-import com.kakaopay.task.domain.AllocateMoneyDetail;
-import com.kakaopay.task.domain.AllocateMoneyRequest;
+import com.kakaopay.task.domain.*;
 import com.kakaopay.task.exception.AllocateMoneyException;
+import com.kakaopay.task.repository.AllocateMoneyDetailRedisRepository;
 import com.kakaopay.task.repository.AllocateMoneyDetailRepository;
+import com.kakaopay.task.repository.AllocateMoneyRedisRepository;
 import com.kakaopay.task.repository.AllocateMoneyRepository;
 import com.kakaopay.task.util.LogUtil;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -17,7 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class AllocateMoneyService {
@@ -28,8 +31,14 @@ public class AllocateMoneyService {
     private AllocateMoneyRepository amRepo;
 
     @Autowired
+    private AllocateMoneyRedisRepository amRedisRepo;
+
+    @Autowired
     private AllocateMoneyDetailRepository amdRepo;
-    
+
+    @Autowired
+    private AllocateMoneyDetailRedisRepository amdRedisRepo;
+
     /**
      * 뿌리기 프로세스
      *
@@ -73,8 +82,21 @@ public class AllocateMoneyService {
                 .count(count)
                 .regDate(LocalDateTime.now())
                 .build();
-        amRepo.save(am); // 뿌리기 요청 정보 저장
-        logger.info("am={}", LogUtil.printData(am));
+        AllocateMoney amResult = amRepo.save(am); // 뿌리기 요청 정보 저장
+//        logger.info("amResult={}", LogUtil.printData(amResult));
+
+        // 뿌리기 캐시 저장
+        AllocateMoneyRedis amRedis = new AllocateMoneyRedis();
+        amRedis.setId(amResult.getId());
+        amRedis.setToken(amResult.getToken());
+        amRedis.setRoomId(amResult.getRoomId());
+        amRedis.setUserId(amResult.getUserId());
+        amRedis.setMoney(amResult.getMoney());
+        amRedis.setCount(amResult.getCount());
+        amRedis.setRegDate(amResult.getRegDate());
+
+        AllocateMoneyRedis amRedisResult = amRedisRepo.save(amRedis);
+//        logger.info("amRedisResult={}", LogUtil.printData(amRedisResult));
 
         // 뿌리기 금액 랜덤으로 분배
         int[] splitMoney = new int[count];
@@ -89,7 +111,7 @@ public class AllocateMoneyService {
         }
         logger.info("splitMoney 셔플 전 ={}", LogUtil.printData(splitMoney));
 
-        // 분배 금액 셔플
+        // 뿌릴 금액 셔플
         int s1, s2;
         int temp;
         for (int i = 0; i < splitMoney.length; i++) {
@@ -105,7 +127,7 @@ public class AllocateMoneyService {
         }
         logger.info("splitMoney 셔플 후 ={}", LogUtil.printData(splitMoney));
 
-        // 뿌리기 금액 정보 생성
+        // 뿌릴 금액 정보 생성
         AllocateMoneyDetail amd = null;
         List<AllocateMoneyDetail> amdList = new ArrayList<>();
         for (int i = 0; i < splitMoney.length; i++) {
@@ -119,8 +141,24 @@ public class AllocateMoneyService {
                     .build();
             amdList.add(amd);
         }
-        amdRepo.saveAll(amdList); // 뿌리기 금액 정보 저장
+        List<AllocateMoneyDetail> amdResultList = amdRepo.saveAll(amdList); // 뿌릴 금액 정보 저장
         logger.info("amdList={}", LogUtil.printData(amdList));
+
+        List<AllocateMoneyDetailRedis> amdRedisList = new ArrayList<>();
+        for (AllocateMoneyDetail amdResult : amdResultList) {
+            AllocateMoneyDetailRedis amdRedis = new AllocateMoneyDetailRedis();
+            amdRedis.setId(amdResult.getId());
+            amdRedis.setToken(amdResult.getToken());
+            amdRedis.setRoomId(amdResult.getRoomId());
+            amdRedis.setReceiverId(amdResult.getReceiverId());
+            amdRedis.setSplitMoney(amdResult.getSplitMoney());
+            amdRedis.setMaxMoneyYn(amdResult.getMaxMoneyYn());
+            amdRedis.setRegDate(amdResult.getRegDate());
+            amdRedisList.add(amdRedis);
+        }
+
+        // 뿌릴 금액 캐시 저장
+        amdRedisRepo.saveAll(amdRedisList);
 
         return token;
     }
@@ -141,9 +179,11 @@ public class AllocateMoneyService {
         List<AllocateMoneyDetail> amdList = null;
         LocalDateTime ldt = LocalDateTime.now().minusMinutes(10); // 10분전
         Map<String, Object> result = new LinkedHashMap<>();
+        int receiveMoney = 0;
 
-        // roomId, token 값으로 뿌리기 정보 조회
-        am = amRepo.findByRoomIdAndToken(roomId, token);
+        // roomId, token 값으로 뿌리기 정보 조회 (캐시를 우선 확인)
+        am = getCacheAllocateMoney(roomId, token);
+//        am = amRepo.findByRoomIdAndToken(roomId, token);
 
         // 대화방이 다르거나 token이 유효하지 않은 경우
         if (am == null) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_ROOM_TOKEN);
@@ -154,24 +194,22 @@ public class AllocateMoneyService {
         // 자신이 뿌리기한 건은 자신이 받을 수 없습니다.
         if (am.getUserId() == userId) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_RECEVICE);
 
-        // roomId, token, userId 값으로 뿌리기 금액 정보 조회
-        amdList = amdRepo.findByRoomIdAndTokenAndReceiverId(roomId, token, userId);
-
-        // 조회된 결과가 없을 경우
-        if (amdList == null) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_AMD_EMPTY);
+        // roomId, token, userId 값으로 받기 정보 조회
+        amdList = getCacheAllocateMoneyDetail(roomId, token, userId, "Y");
+//        amdList = amdRepo.findByRoomIdAndTokenAndReceiverId(roomId, token, userId);
 
         // 뿌리기 당 한 사용자는 한번만 받을 수 있습니다.
         if (amdList != null && amdList.size() > 0) {
             throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_DUPLICATE);
         }
-        
+
         // 받기 가능한 금액 정보 조회 (-1 : 받기 미할당 값)
-        int receiveMoney = 0;
-        amdList = amdRepo.findByRoomIdAndTokenAndReceiverId(roomId, token, -1);
-        if (amdList != null && amdList.size() > 0) {
+        List<AllocateMoneyDetail> amdResultList = getCacheAllocateMoneyDetail(roomId, token, -1, "Y");
+//        amdList = amdRepo.findByRoomIdAndTokenAndReceiverId(roomId, token, -1);
+        if (amdResultList != null && amdResultList.size() > 0) {
             // 최고 금액 계산
             int maxMoney = 0;
-            for (AllocateMoneyDetail tempAmd : amdList) {
+            for (AllocateMoneyDetail tempAmd : amdResultList) {
                 // 최고 금액으로 갱신
                 if (maxMoney < tempAmd.getSplitMoney()) {
                     maxMoney = tempAmd.getSplitMoney();
@@ -179,7 +217,7 @@ public class AllocateMoneyService {
                 logger.info("money={}, maxMoney={}", tempAmd.getSplitMoney(), maxMoney);
             }
 
-            amd = amdList.get(0); // 금액 생성 순 조회 할당
+            amd = amdResultList.get(0); // 금액 생성 순 조회 할당
             receiveMoney = amd.getSplitMoney(); // 받을 금액
             amd.setReceiverId(userId); // 미할당 -1 값에서 요청자의 userId로 설정
             logger.info("money@@@@@@@@@={}, maxMoney@@@@@@@@@={}", receiveMoney, maxMoney);
@@ -197,7 +235,18 @@ public class AllocateMoneyService {
             }
             result.put("data", ErrorCode.OK);
 
-            amdRepo.save(amd); // 기존 정보 갱신
+            AllocateMoneyDetail amdResult = amdRepo.save(amd); // 기존 정보 갱신
+
+            AllocateMoneyDetailRedis amdRedis = new AllocateMoneyDetailRedis();
+            amdRedis.setId(amdResult.getId());
+            amdRedis.setToken(amdResult.getToken());
+            amdRedis.setRoomId(amdResult.getRoomId());
+            amdRedis.setReceiverId(amdResult.getReceiverId());
+            amdRedis.setSplitMoney(amdResult.getSplitMoney());
+            amdRedis.setMaxMoneyYn(amdResult.getMaxMoneyYn());
+            amdRedis.setRegDate(amdResult.getRegDate());
+
+            amdRedisRepo.save(amdRedis); // 기존 캐시 정보 갱신
 
         } else {
             // 더 이상 받을 뿌리기가 없습니다.
@@ -225,7 +274,8 @@ public class AllocateMoneyService {
         Map<String, Object> result = new LinkedHashMap<>();
 
         // roomId, token 값으로 뿌리기 정보 조회
-        am = amRepo.findByRoomIdAndToken(roomId, token);
+        am = getCacheAllocateMoney(roomId, token);
+//        am = amRepo.findByRoomIdAndToken(roomId, token);
 
         // 대화방이 다르거나 token이 유효하지 않은 경우
         if (am == null) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_ROOM_TOKEN);
@@ -237,7 +287,8 @@ public class AllocateMoneyService {
         if (ld.isAfter(am.getRegDate())) throw new AllocateMoneyException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_7_DAY);
 
         // 받은 금액 정보 조회 (-1 이 아닌 정보)
-        amdList = amdRepo.findByRoomIdAndTokenAndReceiverIdNot(roomId, token, -1);
+        amdList = getCacheAllocateMoneyDetail(roomId, token, -1, "N");
+//        amdList = amdRepo.findByRoomIdAndTokenAndReceiverIdNot(roomId, token, -1);
         logger.info("amdList={}", LogUtil.printData(amdList));
 
         // 뿌린 시각, 뿌린 금액, 받기 완료된 금액, 받기 완료된 정보 ([받은 금액, 받은 사용자 아이디] 리스트)
@@ -245,6 +296,8 @@ public class AllocateMoneyService {
         int sumSplitMoney = 0;
         if (amdList != null) {
             for (AllocateMoneyDetail tempAmd : amdList) {
+                // 받지 않은 데이터는 스킵
+                if (tempAmd.getReceiverId() < 0) continue;
                 // 받기 완료된 금액 합산
                 sumSplitMoney += tempAmd.getSplitMoney();
                 // 받은 금액, 받은 사용자 아이디 결과 생성
@@ -268,6 +321,77 @@ public class AllocateMoneyService {
         result.put("data", ErrorCode.OK);
 
         return result;
+    }
+
+    /**
+     * 뿌리기 데이터 캐시 정보 조회
+     *
+     * @param roomId
+     * @param token
+     * @return
+     * @throws Exception
+     */
+    public AllocateMoney getCacheAllocateMoney(String roomId, String token) throws Exception {
+        AllocateMoney am = new AllocateMoney();
+        AllocateMoneyRedis amCacheResult = amRedisRepo.findByRoomIdAndToken(roomId, token);
+        logger.info("amCacheResult={}", LogUtil.printData(amCacheResult));
+
+        if (amCacheResult != null) {
+            am.setId(amCacheResult.getId());
+            am.setToken(amCacheResult.getToken());
+            am.setRoomId(amCacheResult.getRoomId());
+            am.setUserId(amCacheResult.getUserId());
+            am.setMoney(amCacheResult.getMoney());
+            am.setCount(amCacheResult.getCount());
+            am.setRegDate(amCacheResult.getRegDate());
+        } else {
+            am = amRepo.findByRoomIdAndToken(roomId, token);
+        }
+
+        return am;
+    }
+
+    /**
+     * 뿌릴 데이터 캐시 정보 조회
+     *
+     * @param roomId
+     * @param token
+     * @param receiveId
+     * @param receiveYn
+     * @return
+     * @throws Exception
+     */
+    public List<AllocateMoneyDetail> getCacheAllocateMoneyDetail(String roomId, String token, int receiveId, String receiveYn) throws Exception {
+
+        List<AllocateMoneyDetail> amdList = new ArrayList<>();
+        List<AllocateMoneyDetailRedis> amdCacheResult = null;
+
+        if ("Y".equals(receiveYn)) {
+            amdCacheResult = amdRedisRepo.findByRoomIdAndTokenAndReceiverId(roomId, token, receiveId);
+        } else {
+            amdCacheResult = amdRedisRepo.findByRoomIdAndToken(roomId, token);
+        }
+        logger.info("amdCacheResult####={}", LogUtil.printData(amdCacheResult));
+
+        if (amdCacheResult != null) {
+            for (AllocateMoneyDetailRedis amdCache : amdCacheResult) {
+                logger.info("amdCacheResult 값 = {}", amdCache.getId());
+                AllocateMoneyDetail amd = new AllocateMoneyDetail();
+                amd.setId(amdCache.getId());
+                amd.setToken(amdCache.getToken());
+                amd.setRoomId(amdCache.getRoomId());
+                amd.setReceiverId(amdCache.getReceiverId());
+                amd.setSplitMoney(amdCache.getSplitMoney());
+                amd.setMaxMoneyYn(amdCache.getMaxMoneyYn());
+                amd.setRegDate(amdCache.getRegDate());
+
+                amdList.add(amd);
+            }
+        } else {
+            amdList = amdRepo.findByRoomIdAndTokenAndReceiverId(roomId, token, -1);
+        }
+
+        return amdList;
     }
 
 }

@@ -105,7 +105,7 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // USER_ID 유효성 예외처리 검사
         MockHttpServletRequestBuilder builder3 = put(URL+"/"+token)
@@ -117,7 +117,7 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder3)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // token 유효성 예외처리 검사
         MockHttpServletRequestBuilder builder4 = put(URL+"/dt")
@@ -129,7 +129,7 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder4)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
     }
 
     @Test
@@ -163,7 +163,7 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_ROOM_TOKEN.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_ROOM_TOKEN.getResultCode())));
     }
 
     @Test
@@ -206,7 +206,7 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_10_MINUTES.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_10_MINUTES.getResultCode())));
     }
 
     @Test
@@ -240,7 +240,7 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_RECEVICE.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_RECEVICE.getResultCode())));
     }
 
     @Test
@@ -274,12 +274,12 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.OK.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.OK.getResultCode())));
 
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_DUPLICATE.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_DUPLICATE.getResultCode())));
     }
 
     @Test
@@ -314,7 +314,7 @@ class ReceiveMoneyTest {
             mockMvc.perform(builder2)
                     .andDo(print())
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.OK.getCode())));
+                    .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.OK.getResultCode())));
         }
         MockHttpServletRequestBuilder builder2 = put(URL + "/" + token)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -325,7 +325,7 @@ class ReceiveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_END.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_END.getResultCode())));
     }
 
 }

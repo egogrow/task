@@ -103,7 +103,7 @@ class RetrieveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // USER_ID 유효성 예외처리 검사
         MockHttpServletRequestBuilder builder3 = get(URL+"/"+token)
@@ -115,7 +115,7 @@ class RetrieveMoneyTest {
         mockMvc.perform(builder3)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
 
         // token 유효성 예외처리 검사
         MockHttpServletRequestBuilder builder4 = get(URL+"/dt")
@@ -127,7 +127,7 @@ class RetrieveMoneyTest {
         mockMvc.perform(builder4)
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_REQUEST.getResultCode())));
     }
 
     @Test
@@ -161,7 +161,7 @@ class RetrieveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_ROOM_TOKEN.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_ROOM_TOKEN.getResultCode())));
     }
 
     @Test
@@ -195,7 +195,7 @@ class RetrieveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_RETRIEVE.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_RETRIEVE.getResultCode())));
     }
 
     @Test
@@ -238,7 +238,7 @@ class RetrieveMoneyTest {
         mockMvc.perform(builder2)
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_7_DAY.getCode())));
+                .andExpect(jsonPath("$.resultCode.code", is(ErrorCode.ERROR_7_DAY.getResultCode())));
     }
 
 }

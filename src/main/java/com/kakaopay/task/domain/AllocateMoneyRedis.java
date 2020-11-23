@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.index.Indexed;
 
 import javax.persistence.Id;
 import java.time.LocalDateTime;
@@ -16,7 +17,9 @@ import java.time.LocalDateTime;
 public class AllocateMoneyRedis {
     @Id
     private Long id;
+    @Indexed
     private String token;
+    @Indexed
     private String roomId;
     private int userId;
     private int money;
@@ -24,8 +27,7 @@ public class AllocateMoneyRedis {
     private LocalDateTime regDate;
 
     @Builder
-    public AllocateMoneyRedis(Long id, String token, String roomId, int userId, int money, int count, LocalDateTime regDate) {
-        this.id = id;
+    public AllocateMoneyRedis(String token, String roomId, int userId, int money, int count, LocalDateTime regDate) {
         this.token = token;
         this.roomId = roomId;
         this.userId = userId;
